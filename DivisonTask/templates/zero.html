@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Zero division</title>
+    </head>
+    <body>
+        <h1>Wrong divisor</h1>
+        <p>You can't devide by zero. Please try other combination!</p>
+
+        <form action="{{ url_for('dividng')}}", method='GET'>
+            <button type="submit_button", class="register-redirect">Try other divisor</button>
+        </form>
+    </body>
+</html>
