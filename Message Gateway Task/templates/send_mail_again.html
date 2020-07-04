@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify mail</title>
+    </head>
+    <body>
+        <form action="/verification/send_again" method="post" id="form_id">
+            <header class="form-header"><h1>Send verification email</h1></header>
+
+            <label>E-mail</label>
+            <input class="email" type="email" name="email" placeholder="Enter your e-mail" required><br>
+
+            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+
+        </form>
+
+        <script>
+            function save() {
+                document.getElementById("form_id").submit();
+            }
+        </script>
+    </body>
+</html>
