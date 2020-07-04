@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Register Message Gateway</title>
+    </head>
+    <body>
+        <form action="/register" method="post" id="form_id">
+            <header class="form-header"><h1>Get started</h1></header>
+
+            <label>Username</label>
+            <input class="username" type="text" name="username" placeholder="Enter displayed username" required><br>
+
+            <label>Password</label>
+            <input class="password" type="password" name="password" placeholder="Enter your password" required><br>
+
+            <label>Confirm password</label>
+            <input class="confirm-pswd" type="password" name="confirm-pswd" placeholder="Type again your password" required><br>
+
+            <label>E-mail</label>
+            <input class="email" type="email" name="email" placeholder="Enter your e-mail" required><br>
+
+            <label>Phone number in given format</label>
+            <input class="phone-number" type="text" name="phone-number" placeholder="+35989***" required><br>
+
+            <label>Do you have WhatsApp</label>
+            <input class="has-whatsapp" type="checkbox" name="has-whatsapp"><br>
+
+            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+
+        </form>
+
+        <script>
+            function save() {
+                document.getElementById("form_id").submit();
+            }
+        </script>
+    </body>
+</html>
