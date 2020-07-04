@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/all_articles.css">
+        <title>All news</title>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Here you can see all available news articles</h1>
+
+            <form action="/searched" method='POST'>
+                <label>From date</label>
+                <input name="from" type="date" required/>
+
+                <label>To date</label>
+                <input name="to" type="date" required/>
+
+                <input type="submit" value="Search">
+            </form>
+
+        </div>
+
+        <div class="articles">
+            {% for article in articles %}
+                <a href="{{ article.url }}" class="article-link">
+                    <div class="article">
+                        <h4>{{ article.title }}</h4>
+
+                        {% if not article.urlToImage %}
+                        <img src="../static/noImage.png" alt="{{ article.title }}'s photo">
+                        {% endif %}
+
+                        {% if article.urlToImage != null %}
+                        <img src="{{ article.urlToImage }}" alt="{{ article.title }}'s photo">
+                        {% endif %}
+
+                        <p><b>Written by:</b> {{ article.author }}</p>
+                        <p><b>Short description:</b> {{ article.description }}</p>
+                        <p><b>Published at:</b> {{ article.publishedAt }}</p>
+                        <a href="{{ article.url }}">Read more</a>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </body>
+</html>

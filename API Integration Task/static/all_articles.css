@@ -1,0 +1,39 @@
+body {
+    font-family: Arial;
+    margin: 0;
+}
+
+.header {
+    padding: 60px;
+    text-align: center;
+    background: #1abc9c;
+    color: white;
+    font-size: 30px;
+}
+
+.articles {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.article {
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    width: 20vw;
+    height: auto;
+    margin: 2vw;
+    border: 2px solid black;
+    border-radius: 5px;
+    box-shadow: 10px 10px 5px grey;
+}
+
+.article-link {
+    text-decoration: none;
+    color: black;
+}
+
+img {
+    width: 100%;
+    height: auto;
+}
