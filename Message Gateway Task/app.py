@@ -1,9 +1,11 @@
 from flask import Flask
-from flask import render_template, url_for, redirect, request, flash
+from flask import render_template, url_for, redirect, request, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from passlib.hash import pbkdf2_sha256
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
+from functools import wraps
+from datetime import datetime
 
 # Initialize app
 app = Flask(__name__)
@@ -25,13 +27,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 s = URLSafeTimedSerializer('SECRET_KEY')
 
-# app.config['MAIL_SERVER']='smtp.gmail.com'
-# app.config['MAIL_USERNAME']='nikitaprodanov20@gmail.com'
-# app.config['MAIL_PASSWORD']='nikita0708'
-# app.config['MAIL_PORT']=465
-# app.config['MAIL_USE_SSL']=True
-# app.config['MAIL_USE_TLS']=False
-
 app.config.from_pyfile('configuration.cfg')
 
 mail = Mail(app)
@@ -49,14 +44,33 @@ class User(db.Model):
     phone = db.Column(db.Text())
     hasWhatsapp = db.Column(db.Boolean())
     verified = db.Column(db.Boolean())
+    messages = db.relationship('Message', backref='sender')
 
     def __init__(self, username, password, email, phone, hasWhatsapp):
         self.username = username
-        self.password = pbkdf2_sha256.hash(password)
+        self.password = password
         self.email = email
         self.phone = phone
         self.hasWhatsapp = hasWhatsapp
         self.verified = False
+
+class Message(db.Model):
+    __tablename__ = "messages"
+    id = db.Column(db.Integer, primary_key=True)
+    senderId = db.Column(db.Integer(), db.ForeignKey('users.id'))
+    reciever = db.Column(db.Text())
+    message = db.Column(db.Text())
+    sendDate = db.Column(db.DateTime, default=datetime.utcnow)
+    tax = db.Column(db.Integer())
+    status = db.Column(db.Text())
+
+    def __init__(self, reciever, message, tax, status, sender):
+        self.reciever = reciever
+        self.message = message
+        self.tax = tax
+        self.status = status
+        self.sender = sender
+        
 
 @app.route('/')
 def index():
@@ -78,7 +92,7 @@ def register():
 
         if not pbkdf2_sha256.verify(request.form['confirm-pswd'], password):
             return redirect(url_for('confirm_password_error'))
-        elif User.query.filter_by(email=email).count() > 0:
+        if User.query.filter_by(email=email).count() > 0:
             return redirect(url_for('register_email_error'))
         else:
             data = User(username=username, password=password, email=email, phone=phone, hasWhatsapp=hasWhatsapp)
@@ -127,6 +141,7 @@ def confirm_email(token):
         email = s.loads(token, salt='email-confirm', max_age=50)
         user = User.query.filter_by(email=email).first()
         user.verified = True
+        session['verified'] = True
         db.session.commit()
         return redirect(url_for('index'))
     except SignatureExpired:
@@ -143,6 +158,91 @@ def token_error_spelling():
     return render_template('token_error_misspelled.html')
 
 # LOGIN ROUTES AND METHODS
+
+def require_login(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect('/login')
+        return func(*args, **kwargs)
+    return wrapper
+
+def require_verification(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get('verified'):
+            return redirect('/verification/send_again')
+        return func(*args, **kwargs)
+    return wrapper
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+    if request.method == 'POST':
+        email = request.form['email']
+        print(request.form['password'])
+        user = User.query.filter_by(email=email).first()
+        if user is None:
+            return redirect(url_for('wrong_credentials_error'))
+        if not pbkdf2_sha256.verify(request.form['password'], user.password):
+            return redirect(url_for('wrong_credentials_error'))
+        # TODO: finish implementation when all credentials are good
+        session['logged_in'] = True
+        session['user_id'] = user.id
+        session['verified'] = user.verified
+        return redirect(url_for('home'))
+
+@app.route('/logout')
+@require_login
+def logout():
+    session['logged_in'] = False
+    session['user_id'] = None
+    session['verified'] = False
+    return redirect('/')
+
+@app.route('/login/credentials_error')
+def wrong_credentials_error():
+    return render_template('wrong_credentials.html')
+
+# REQUIRED LOGIN AND MAIL VERIFICATION METHODS
+@app.route('/home')
+@require_login
+def home():
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    return render_template('home.html', user=user)
+
+@app.route('/send_sms', methods=['GET', 'POST'])
+@require_login
+@require_verification
+def send_sms():
+    if request.method == 'GET':
+        return render_template('send_sms.html')
+    if request.method == 'POST':
+        reciever = request.form['phone-number']
+        msg = "This is automated sms from {}: {}".format(request.form['from'], request.form['message'])
+        tax = 5
+        status = 'develop' # TODO: change to actual status when implementing the twilio api
+        sender = User.query.filter_by(id=session.get('user_id')).first()
+
+        data = Message(reciever=reciever, message=msg, tax=tax, status=status, sender=sender)
+        db.session.add(data)
+        db.session.commit()
+        return redirect(url_for('success_sms'))
+
+@app.route('/send_sms/sucsess')
+@require_login
+@require_verification
+def success_sms():
+    return render_template('success_sms.html')
+    
+@app.route('/user/sent_sms')
+@require_login
+@require_verification
+def sent_sms():
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    messages = user.messages
+    return render_template('sent_sms_list.html', messages=messages, user=user)
 
 if __name__ == '__main__':
     app.run(debug=debug)

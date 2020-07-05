@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Previous SMS</title>
+    </head>
+    <body>
+        <h1>You are logged in as {{ user.username }}</h1>
+        {% for message in messages %}
+            <div>
+                <h3>Reciever: {{ message.reciever }}</h3>
+                <p>Message: {{ message.message }}</p>
+                <h3>Sent on: {{ message.sendDate }}</h3>
+            </div>
+        {% endfor %}
+
+        <a href="{{ url_for('home') }}"><button>Go back home</button></a>
+    </body>
+</html>

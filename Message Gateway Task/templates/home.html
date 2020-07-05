@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Home</title>
+    </head>
+    <body>
+        <h1>You are logged in as {{ user.username }} </h1>
+
+        {% if user.verified is sameas false %}
+            <p>It seems like you didn't verify your email.</p>
+            <a href="{{ url_for('verification_send') }}"><button>Verify my email</button></a>
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}"><button>Log out</button></a>
+        <a href="{{ url_for('send_sms') }}"><button>Send a SMS</button></a>
+        <a href="{{ url_for('sent_sms') }}"><button>See previous SMSes</button></a>
+    </body>
+</html>

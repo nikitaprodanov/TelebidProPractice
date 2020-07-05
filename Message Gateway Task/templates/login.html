@@ -3,14 +3,17 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Verify mail</title>
+        <title>Login</title>
     </head>
     <body>
-        <form action="/verification/send_again" method="post" id="form_id">
-            <header class="form-header"><h1>Looks like your e-mail is not verified. <br> Send verification email:</h1></header>
+        <form action="/login" method="post" id="form_id">
+            <header class="form-header"><h1>Log in</h1></header>
 
             <label>E-mail</label>
             <input class="email" type="email" name="email" placeholder="Enter your e-mail" required><br>
+
+            <label>Password</label>
+            <input class="password" type="password" name="password" placeholder="Enter your password" required><br>
 
             <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
