@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>New Contact</title>
+    </head>
+    <body>
+        <form action="/new_contact" method="post" id="form_id">
+            <header class="form-header"><h1>Send SMS</h1></header>
+
+            <label>Contact name</label>
+            <input class="name" type="text" name="name" placeholder="How will be this contact displayed" required><br>
+
+            <label>Contact phone in given format</label>
+            <input class="phone-number" type="text" name="phone-number" placeholder="+35989***" required><br>
+
+            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+
+        </form>
+
+        <script>
+            function save() {
+                document.getElementById("form_id").submit();
+            }
+        </script>
+    </body>
+</html>

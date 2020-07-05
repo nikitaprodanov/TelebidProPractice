@@ -44,7 +44,8 @@ class User(db.Model):
     phone = db.Column(db.Text())
     hasWhatsapp = db.Column(db.Boolean())
     verified = db.Column(db.Boolean())
-    messages = db.relationship('Message', backref='sender')
+    messages = db.relationship('SMS', backref='sender')
+    contacts = db.relationship('Contact', backref='owner')
 
     def __init__(self, username, password, email, phone, hasWhatsapp):
         self.username = username
@@ -54,7 +55,7 @@ class User(db.Model):
         self.hasWhatsapp = hasWhatsapp
         self.verified = False
 
-class Message(db.Model):
+class SMS(db.Model):
     __tablename__ = "messages"
     id = db.Column(db.Integer, primary_key=True)
     senderId = db.Column(db.Integer(), db.ForeignKey('users.id'))
@@ -70,6 +71,20 @@ class Message(db.Model):
         self.tax = tax
         self.status = status
         self.sender = sender
+
+class Contact(db.Model):
+    __tablename__ = "contacts"
+    id = db.Column(db.Integer, primary_key=True)
+    ownerId = db.Column(db.Integer(), db.ForeignKey('users.id'))
+    reciever = db.Column(db.Text())
+    contactName = db.Column(db.Text())
+    method = db.Column(db.Text())
+
+    def __init__(self, reciever, contactName, method, owner):
+        self.reciever = reciever
+        self.contactName = contactName
+        self.method = method
+        self.owner = owner
         
 
 @app.route('/')
@@ -225,9 +240,10 @@ def send_sms():
         status = 'develop' # TODO: change to actual status when implementing the twilio api
         sender = User.query.filter_by(id=session.get('user_id')).first()
 
-        data = Message(reciever=reciever, message=msg, tax=tax, status=status, sender=sender)
+        data = SMS(reciever=reciever, message=msg, tax=tax, status=status, sender=sender)
         db.session.add(data)
         db.session.commit()
+
         return redirect(url_for('success_sms'))
 
 @app.route('/send_sms/sucsess')
@@ -243,6 +259,36 @@ def sent_sms():
     user = User.query.filter_by(id=session.get('user_id')).first()
     messages = user.messages
     return render_template('sent_sms_list.html', messages=messages, user=user)
+
+@app.route('/user/contacts')
+@require_login
+@require_verification
+def user_contacts():
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    contacts = user.contacts
+    return render_template('user_contacts.html', contacts=contacts)
+
+@app.route('/send_sms_from_contacts/<reciever>/<method>')
+@require_login
+@require_verification
+def send_sms_from_contacts(reciever, method):
+    return render_template('send_from_contact.html', reciever=reciever)
+
+@app.route('/new_contact', methods=['GET', 'POST'])
+@require_login
+@require_verification
+def new_contact():
+    if request.method == 'GET':
+        return render_template('new_contact.html')
+    if request.method == 'POST':
+        reciever = request.form['phone-number']
+        contactName = request.form['name']
+        method = 'sms'
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        data = Contact(reciever=reciever, contactName=contactName, method=method, owner=user)
+        db.session.add(data)
+        db.session.commit()
+        return redirect('/user/contacts')
 
 if __name__ == '__main__':
     app.run(debug=debug)

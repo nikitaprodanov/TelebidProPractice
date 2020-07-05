@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My contacts</title>
+    </head>
+    <body>
+        <h1>These are your contacts:</h1>
+
+        {% for contact in contacts %}
+            <div>
+                <h3>{{ contact.contactName }}</h3>
+                <p>Phone: {{ contact.reciever }}</p>
+                <p>Message method: {{ contact.method }}</p>
+                <a href="{{ url_for('send_sms_from_contacts', reciever=contact.reciever, method=contact.method) }}"><button>Send again</button></a>
+            </div>
+        {% endfor %}
+
+        <a href="{{ url_for('home') }}"><button>Go back home</button></a>
+        <a href="{{ url_for('new_contact') }}"><button>Create new contact</button></a>
+    </body>
+</html>
