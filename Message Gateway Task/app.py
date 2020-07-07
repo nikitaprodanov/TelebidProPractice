@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template, url_for, redirect, request, flash, session
+from flask import render_template, url_for, redirect, request, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from passlib.hash import pbkdf2_sha256
 from flask_mail import Mail, Message
@@ -7,6 +7,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignat
 from functools import wraps
 from datetime import datetime
 from twilio.rest import Client
+import paypalrestsdk
 import json
 import random
 import string
@@ -27,13 +28,16 @@ elif ENV == 'prod':
     debug = False
 
 # General configurations
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 s = URLSafeTimedSerializer('SECRET_KEY')
 
 app.config.from_pyfile('configuration.cfg')
 
 mail = Mail(app)
+
+paypalrestsdk.configure({
+  "mode": "sandbox", # sandbox or live
+  "client_id": "AfxkPJLHBYNgbp6qAUuNdtuORQS2pbtci_RyoU0OWSgv7r56pYvOKWaVVQWeBz_zWD2W4wYcTnNgvmgL",
+  "client_secret": "EJzlHUnA4eEG79116_Sk2BDVAFeFBbW_9sNtrUhAh7hG8RhezM0TQ0hXblfr32M5NPlZUrPHaJvA-TaQ" })
 
 # Database models
 db = SQLAlchemy(app)
@@ -48,8 +52,10 @@ class User(db.Model):
     phone = db.Column(db.Text())
     hasWhatsapp = db.Column(db.Boolean())
     verified = db.Column(db.Boolean())
+    points = db.Column(db.Integer())
     messages = db.relationship('SMS', backref='sender')
     contacts = db.relationship('Contact', backref='owner')
+    payments = db.relationship('Payment', backref='payer')
 
     def __init__(self, username, password, email, phone, hasWhatsapp):
         self.username = username
@@ -58,6 +64,7 @@ class User(db.Model):
         self.phone = phone
         self.hasWhatsapp = hasWhatsapp
         self.verified = False
+        self.points = 0
 
 class SMS(db.Model):
     __tablename__ = "messages"
@@ -89,6 +96,21 @@ class Contact(db.Model):
         self.contactName = contactName
         self.method = method
         self.owner = owner
+
+class Payment(db.Model):
+    __tablename__ = "payments"
+    id = db.Column(db.Integer, primary_key=True)
+    payerId = db.Column(db.Integer(), db.ForeignKey('users.id'))
+    bill = db.Column(db.Integer())
+    payDate = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.Text())
+    plan = db.Column(db.Text())
+
+    def __init__(self, bill, status, plan, payer):
+        self.bill = bill
+        self.status = status
+        self.plan = plan
+        self.payer = payer
         
 
 @app.route('/')
@@ -238,6 +260,10 @@ def send_sms():
     if request.method == 'GET':
         return render_template('send_sms.html')
     if request.method == 'POST':
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        if user.points < app.config['SMS_TAX_POINTS']:
+            return redirect(url_for('payment_form'))
+
         account_sid = "AC68d1456824929a8b36012db1c7df9cd6"
         auth_token = "87b90a5e8fc92f0a09ee154a1d867dbc"
         client = Client(account_sid, auth_token)
@@ -245,7 +271,7 @@ def send_sms():
         try:
             reciever = request.form['phone-number']
             msg = "This is automated sms from {}: {}".format(request.form['from'], request.form['message'])
-            tax = 5
+            tax = app.config['SMS_TAX_POINTS']
             sender = User.query.filter_by(id=session.get('user_id')).first()
 
             contact = Contact.query.filter_by(owner=sender, reciever=reciever, method='sms').first()
@@ -265,6 +291,9 @@ def send_sms():
                 status_callback=str(callback_uri),
                 to=request.form['phone-number']
             )
+
+            sender.points -= tax
+            db.session.commit()
 
             return redirect(url_for('success_sms'))
         except:
@@ -305,6 +334,14 @@ def user_contacts():
     user = User.query.filter_by(id=session.get('user_id')).first()
     contacts = user.contacts
     return render_template('user_contacts.html', contacts=contacts)
+
+@app.route('/user/payments')
+@require_login
+@require_verification
+def user_payments():
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    payments = user.payments
+    return render_template('user_payments.html', payments=payments)
 
 @app.route('/send_sms_from_contacts/<reciever>/<method>')
 @require_login
@@ -371,5 +408,76 @@ def change_credentials():
         db.session.commit()
 
         return redirect('/home')
+
+# PAYMENT ROUTES
+
+@app.route('/payment_form')
+@require_login
+@require_verification
+def payment_form():
+    return render_template('payment_form.html')
+
+@app.route('/payment', methods=['POST'])
+def payment():
+    payment = paypalrestsdk.Payment({
+        "intent": "sale",
+        "payer": {
+            "payment_method": "paypal"},
+        "redirect_urls": {
+            "return_url": "http://localhost:3000/payment/execute",
+            "cancel_url": "http://localhost:3000/"},
+        "transactions": [{
+            "item_list": {
+                "items": [{
+                    "name": "testitem",
+                    "sku": "12345",
+                    "price": "10.00",
+                    "currency": "USD",
+                    "quantity": 1}]},
+            "amount": {
+                "total": "10.00",
+                "currency": "USD"},
+            "description": "This is the payment transaction description."}]})
+
+    if payment.create():
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        data = Payment(bill=10, status='created', plan='100 points', payer=user)
+        db.session.add(data)
+        db.session.commit()
+        session['payment_id'] = data.id
+    else:
+        data = Payment(bill=10, status='failed', plan='100 points', payer=user)
+        db.session.add(data)
+        db.session.commit()
+        return redirect(url_for('payment_error', error=payment.error))
+
+    return jsonify({'paymentID' : payment.id})
+
+@app.route('/execute', methods=['POST'])
+def execute():
+    success = False
+    payment = paypalrestsdk.Payment.find(request.form['paymentID'])
+
+    if payment.execute({'payer_id' : request.form['payerID']}):
+        myPayment = Payment.query.filter_by(id=session.get('payment_id')).first()
+        print('Success execute')
+        succes = True
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        user.points += 100
+        myPayment.status = 'success'
+        db.session.commit()
+    else:
+        myPayment = Payment.query.filter_by(id=session.get('payment_id')).first()
+        myPayment.status = 'failed'
+        db.session.commit()
+        return redirect(url_for('payment_error', error=payment))
+        print(payment.error)
+
+    return jsonify({'success' : success})
+
+@app.route('/payment/error/<error>')
+def payment_error(error):
+    return render_template('payment_error', error=error)
+
 if __name__ == '__main__':
     app.run(debug=debug)

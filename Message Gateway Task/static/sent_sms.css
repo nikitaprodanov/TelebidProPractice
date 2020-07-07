@@ -6,12 +6,12 @@
     font-size: 30px;
 }
 
-.messages, .contacts {
+.messages, .contacts, .payments {
     display: flex;
     flex-wrap: wrap;
 }
 
-.message, .contact {
+.message, .contact, .payment {
     padding: 5px;
     display: flex;
     flex-direction: column;
