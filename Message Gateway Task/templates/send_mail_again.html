@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/register.css">
         <title>Verify mail</title>
     </head>
     <body>
@@ -15,6 +16,8 @@
             <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('verification_send') }}" class="button2">Try again</a>
 
         <script>
             function save() {

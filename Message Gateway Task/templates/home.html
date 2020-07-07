@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/home.css">
         <title>Home</title>
     </head>
     <body>
@@ -10,12 +11,13 @@
 
         {% if user.verified is sameas false %}
             <p>It seems like you didn't verify your email.</p>
-            <a href="{{ url_for('verification_send') }}"><button>Verify my email</button></a>
+            <a href="{{ url_for('verification_send') }}" class="button3"><button>Verify my email</button></a>
         {% endif %}
 
-        <a href="{{ url_for('logout') }}"><button>Log out</button></a>
-        <a href="{{ url_for('send_sms') }}"><button>Send a SMS</button></a>
-        <a href="{{ url_for('sent_sms') }}"><button>See previous SMSes</button></a>
-        <a href="{{ url_for('user_contacts') }}"><button>Contacts list</button></a>
+        <a href="{{ url_for('logout') }}" class="button3">Log out</a>
+        <a href="{{ url_for('send_sms') }}" class="button2">Send a SMS</a>
+        <a href="{{ url_for('sent_sms') }}" class="button2">See previous SMSes</a>
+        <a href="{{ url_for('user_contacts') }}" class="button1">Contacts list</a>
+        <a href="{{ url_for('user_settings') }}" class="button5">Profile settings</a>
     </body>
 </html>

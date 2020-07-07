@@ -6,6 +6,10 @@ from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 from functools import wraps
 from datetime import datetime
+from twilio.rest import Client
+import json
+import random
+import string
 
 # Initialize app
 app = Flask(__name__)
@@ -89,6 +93,8 @@ class Contact(db.Model):
 
 @app.route('/')
 def index():
+    if session.get('logged_in'):
+        return redirect('/home')
     return render_template('land_page.html')
 
 # REGISTER AND VERIFICATION ROUTES AND ERROR HANDLERS
@@ -118,7 +124,7 @@ def register():
 
             msg = Message('Confirmation Email', sender='nikitaprodanov@gmail.com', recipients=[email])
             link = url_for('confirm_email', token=token, _external=True)
-            msg.body = "To confirm your email please click the link: {}. If you didn't expect a verification link please ignore this email.".format(link)
+            msg.html = render_template('email.html', link=link)
             mail.send(msg)
 
             return redirect(url_for('check_email', email=email))
@@ -133,7 +139,7 @@ def verification_send():
 
         msg = Message('Confirmation Email', sender='nikitaprodanov@gmail.com', recipients=[email])
         link = url_for('confirm_email', token=token, _external=True)
-        msg.body = "To confirm your email please click the link: {}. If you didn't expect a verification link please ignore this email.".format(link)
+        msg.html = render_template('email.html', link=link)
         mail.send(msg)
 
         return redirect(url_for('check_email', email=email))
@@ -158,7 +164,7 @@ def confirm_email(token):
         user.verified = True
         session['verified'] = True
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
     except SignatureExpired:
         return redirect(url_for('token_error_expired'))
     except BadTimeSignature:
@@ -196,13 +202,11 @@ def login():
         return render_template('login.html')
     if request.method == 'POST':
         email = request.form['email']
-        print(request.form['password'])
         user = User.query.filter_by(email=email).first()
         if user is None:
             return redirect(url_for('wrong_credentials_error'))
         if not pbkdf2_sha256.verify(request.form['password'], user.password):
             return redirect(url_for('wrong_credentials_error'))
-        # TODO: finish implementation when all credentials are good
         session['logged_in'] = True
         session['user_id'] = user.id
         session['verified'] = user.verified
@@ -234,17 +238,51 @@ def send_sms():
     if request.method == 'GET':
         return render_template('send_sms.html')
     if request.method == 'POST':
-        reciever = request.form['phone-number']
-        msg = "This is automated sms from {}: {}".format(request.form['from'], request.form['message'])
-        tax = 5
-        status = 'develop' # TODO: change to actual status when implementing the twilio api
-        sender = User.query.filter_by(id=session.get('user_id')).first()
+        account_sid = "AC68d1456824929a8b36012db1c7df9cd6"
+        auth_token = "87b90a5e8fc92f0a09ee154a1d867dbc"
+        client = Client(account_sid, auth_token)
 
-        data = SMS(reciever=reciever, message=msg, tax=tax, status=status, sender=sender)
-        db.session.add(data)
-        db.session.commit()
+        try:
+            reciever = request.form['phone-number']
+            msg = "This is automated sms from {}: {}".format(request.form['from'], request.form['message'])
+            tax = 5
+            sender = User.query.filter_by(id=session.get('user_id')).first()
 
-        return redirect(url_for('success_sms'))
+            contact = Contact.query.filter_by(owner=sender, reciever=reciever, method='sms').first()
+
+            if contact:
+                reciever = contact.contactName
+            
+            data = SMS(reciever=reciever, message=msg, tax=tax, status='none', sender=sender)
+            db.session.add(data)
+            db.session.commit()
+
+            callback_uri = url_for('change_status', id=data.id, _external=True)
+
+            sms = client.messages.create(
+                from_="+12018317102",
+                body=msg,
+                status_callback=str(callback_uri),
+                to=request.form['phone-number']
+            )
+
+            return redirect(url_for('success_sms'))
+        except:
+            return redirect(url_for('sms_error'))
+
+@app.route('/messages/status/<int:id>', methods=['POST'])
+def change_status(id):
+    message = Message.query.filter_by(id=id).first()
+    status = request.json.get("MessageStatus")
+    message.status = status
+    db.session.commit()
+    return 'ok'
+
+@app.route('/send_sms/error')
+@require_login
+@require_verification
+def sms_error():
+    return render_template('sms_error.html')
 
 @app.route('/send_sms/sucsess')
 @require_login
@@ -290,5 +328,48 @@ def new_contact():
         db.session.commit()
         return redirect('/user/contacts')
 
+@app.route('/update_contact/<int:id>', methods=['GET', 'POST'])
+@require_login
+@require_verification
+def update_contact(id):
+    contact = Contact.query.filter_by(id=id).first()
+    if request.method == 'GET':
+        return render_template('update_contact.html', contact=contact)
+    if request.method == 'POST':
+        contactName = request.form['name']
+        reciever = request.form['phone-number']
+        contact.contactName = contactName
+        contact.reciever = reciever
+        db.session.commit()
+        return redirect('/user/contacts')
+
+@app.route('/user/settings')
+@require_login
+@require_verification
+def user_settings():
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    return render_template('user_settings.html', user=user)
+
+@app.route('/users/change_credentials', methods=['GET', 'POST'])
+@require_login
+@require_verification
+def change_credentials():
+    if request.method == 'GET':
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        return render_template('change_credentials.html', user=user)
+    if request.method == 'POST':
+        new_username = request.form['username']
+        new_phone = request.form['phone-number']
+        hasWhatsappRes = request.form.get('has-whatsapp')
+        hasWhatsapp = False if hasWhatsappRes == None else True
+
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        user.username = new_username
+        user.phone = new_phone
+        user.hasWhatsapp = hasWhatsapp
+
+        db.session.commit()
+
+        return redirect('/home')
 if __name__ == '__main__':
     app.run(debug=debug)

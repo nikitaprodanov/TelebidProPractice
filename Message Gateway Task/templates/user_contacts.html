@@ -3,21 +3,25 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/sent_sms.css">
         <title>My contacts</title>
     </head>
     <body>
         <h1>These are your contacts:</h1>
 
-        {% for contact in contacts %}
-            <div>
-                <h3>{{ contact.contactName }}</h3>
-                <p>Phone: {{ contact.reciever }}</p>
-                <p>Message method: {{ contact.method }}</p>
-                <a href="{{ url_for('send_sms_from_contacts', reciever=contact.reciever, method=contact.method) }}"><button>Send again</button></a>
-            </div>
-        {% endfor %}
+        <div class="contacts">
+            {% for contact in contacts %}
+                <div class="contact" style="width: 20%;">
+                    <h3>{{ contact.contactName }}</h3>
+                    <p>Phone: {{ contact.reciever }}</p>
+                    <p>Message method: {{ contact.method }}</p>
+                    <a href="{{ url_for('send_sms_from_contacts', reciever=contact.reciever, method=contact.method) }}" class="button2">Send again</a>
+                    <a href="{{ url_for('update_contact', id=contact.id) }}" class="button3">Update contact info</a>
+                </div>
+            {% endfor %}
+        </div>
 
-        <a href="{{ url_for('home') }}"><button>Go back home</button></a>
-        <a href="{{ url_for('new_contact') }}"><button>Create new contact</button></a>
+        <a href="{{ url_for('home') }}" class="button3">Go back home</a>
+        <a href="{{ url_for('new_contact') }}" class="button1">Create new contact</a>
     </body>
 </html>

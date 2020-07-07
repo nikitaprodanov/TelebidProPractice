@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/home.css">
+        <title>Profile Settings</title>
+    </head>
+    <body>
+        <h1>Your username is {{ user.username }}</h1>
+        <h3>Your email is {{ user.email }}</h3>
+        <h3>Your phone: {{ user.phone }}</h3>
+        <h3>WhatsApp: {{ user.hasWhatsapp }}</h3>
+        <a href="{{ url_for('change_credentials') }}" class="button3">Change credentials</a>
+    </body>
+</html>

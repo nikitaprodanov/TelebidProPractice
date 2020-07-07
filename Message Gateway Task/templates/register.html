@@ -3,11 +3,12 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/register.css">
         <title>Register Message Gateway</title>
     </head>
     <body>
         <form action="/register" method="post" id="form_id">
-            <header class="form-header"><h1>Get started</h1></header>
+            <header class="form-header">Get started</header>
 
             <label>Username</label>
             <input class="username" type="text" name="username" placeholder="Enter displayed username" required><br>
@@ -30,6 +31,8 @@
             <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('register') }}" class="button2">Try again</a>
 
         <script>
             function save() {
