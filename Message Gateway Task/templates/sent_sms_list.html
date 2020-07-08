@@ -8,15 +8,24 @@
     </head>
     <body>
         <h1>You are logged in as {{ user.username }}</h1>
-        <div class="messages">
+
+        <table>
+            <tr>
+                <td>Reciever</td>
+                <td>Message</td>
+                <td>Send Date</td>
+                <td>Status</td>
+            </tr>
+
             {% for message in messages %}
-                <div class="message" style="width: 20%;">
-                    <h3>Reciever: {{ message.reciever }}</h3>
-                    <p>Message: {{ message.message }}</p>
-                    <h3>Sent on: {{ message.sendDate }}</h3>
-                </div>
+                <tr>
+                    <td>{{ message.reciever }}</td>
+                    <td>{{ message.message }}</td>
+                    <td>{{ message.sendDate }}</td>
+                    <td>{{ message.status }}</td>
+                </tr>
             {% endfor %}
-        </div>
+        </table>
 
         <a href="{{ url_for('home') }}" class="button1">Go back home</a>
     </body>

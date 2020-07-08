@@ -111,6 +111,26 @@ class Payment(db.Model):
         self.status = status
         self.plan = plan
         self.payer = payer
+
+class Distributor(db.Model):
+    __tablename__ = "distributors"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text())
+    cost = db.Column(db.Float())
+
+    def __init__(self, name, cost):
+        self.name = name
+        self.cost = cost
+
+class Plan(db.Model):
+    __tablename__ = "plans"
+    id = db.Column(db.Integer, primary_key=True)
+    points = db.Column(db.Integer())
+    cost = db.Column(db.Float())
+
+    def __init__(self, points, cost):
+        self.points = points
+        self.cost = cost
         
 
 @app.route('/')
@@ -260,8 +280,10 @@ def send_sms():
     if request.method == 'GET':
         return render_template('send_sms.html')
     if request.method == 'POST':
+        distributor = Distributor.query.filter_by(name='SMS').first()
+
         user = User.query.filter_by(id=session.get('user_id')).first()
-        if user.points < app.config['SMS_TAX_POINTS']:
+        if user.points < distributor.cost:
             return redirect(url_for('payment_form'))
 
         account_sid = "AC68d1456824929a8b36012db1c7df9cd6"
@@ -271,7 +293,7 @@ def send_sms():
         try:
             reciever = request.form['phone-number']
             msg = "This is automated sms from {}: {}".format(request.form['from'], request.form['message'])
-            tax = app.config['SMS_TAX_POINTS']
+            tax = distributor.cost
             sender = User.query.filter_by(id=session.get('user_id')).first()
 
             contact = Contact.query.filter_by(owner=sender, reciever=reciever, method='sms').first()
@@ -279,7 +301,8 @@ def send_sms():
             if contact:
                 reciever = contact.contactName
             
-            data = SMS(reciever=reciever, message=msg, tax=tax, status='none', sender=sender)
+            data = SMS(reciever=reciever, message=msg, tax=tax, status='queued', sender=sender)
+            session['message_id'] = data.id
             db.session.add(data)
             db.session.commit()
 
@@ -295,8 +318,12 @@ def send_sms():
             sender.points -= tax
             db.session.commit()
 
+            data.status = 'delivered'
+
             return redirect(url_for('success_sms'))
         except:
+            message = SMS.query.filter_by(id=session.get('message_id')).first()
+            message.status = 'failed'
             return redirect(url_for('sms_error'))
 
 @app.route('/messages/status/<int:id>', methods=['POST'])
@@ -419,6 +446,7 @@ def payment_form():
 
 @app.route('/payment', methods=['POST'])
 def payment():
+    plan = Plan.query.filter_by(id=1).first()
     payment = paypalrestsdk.Payment({
         "intent": "sale",
         "payer": {
@@ -431,11 +459,11 @@ def payment():
                 "items": [{
                     "name": "testitem",
                     "sku": "12345",
-                    "price": "10.00",
+                    "price": str(plan.cost),
                     "currency": "USD",
                     "quantity": 1}]},
             "amount": {
-                "total": "10.00",
+                "total": str(plan.cost),
                 "currency": "USD"},
             "description": "This is the payment transaction description."}]})
 
@@ -449,6 +477,7 @@ def payment():
         data = Payment(bill=10, status='failed', plan='100 points', payer=user)
         db.session.add(data)
         db.session.commit()
+        print(payment.error)
         return redirect(url_for('payment_error', error=payment.error))
 
     return jsonify({'paymentID' : payment.id})
@@ -470,8 +499,8 @@ def execute():
         myPayment = Payment.query.filter_by(id=session.get('payment_id')).first()
         myPayment.status = 'failed'
         db.session.commit()
-        return redirect(url_for('payment_error', error=payment))
         print(payment.error)
+        return redirect(url_for('payment_error', error=payment))
 
     return jsonify({'success' : success})
 

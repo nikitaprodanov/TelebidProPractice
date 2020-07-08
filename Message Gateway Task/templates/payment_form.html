@@ -1,44 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Document</title>
-</head>
-<body>
-    <div id="paypal-button"></div>
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="../static/payment.css">
+        <title>Buy 1000 points</title>
+    </head>
+    <body>
+        <div id="paypal-button"></div>
 
-<script src="https://www.paypalobjects.com/api/checkout.js"></script>
+        <a href="{{ url_for('home') }}" class="home-button">Go back home</a>
 
-<script>
-    // TODO: Change routes to heroku routes
-    var CREATE_PAYMENT_URL  = 'https://message-gateway-niki.herokuapp.com/payment';
-    var EXECUTE_PAYMENT_URL = 'https://message-gateway-niki.herokuapp.com/execute';
+    <script src="https://www.paypalobjects.com/api/checkout.js"></script>
 
-    paypal.Button.render({
+    <script>
+        // TODO: Change routes to heroku routes
+        var CREATE_PAYMENT_URL  = 'http://127.0.0.1:5000/payment';
+        var EXECUTE_PAYMENT_URL = 'http://127.0.0.1:5000/execute';
 
-        env: 'sandbox', // Or 'sandbox'
+        paypal.Button.render({
 
-        commit: true, // Show a 'Pay Now' button
+            env: 'sandbox', // Or 'sandbox'
 
-        payment: function() {
-            return paypal.request.post(CREATE_PAYMENT_URL).then(function(data) {
-                return data.paymentID;
-            });
-        },
+            commit: true, // Show a 'Pay Now' button
 
-        onAuthorize: function(data) {
-            return paypal.request.post(EXECUTE_PAYMENT_URL, {
-                paymentID: data.paymentID,
-                payerID:   data.payerID
-            }).then(function(res) {
+            payment: function() {
+                return paypal.request.post(CREATE_PAYMENT_URL).then(function(data) {
+                    return data.paymentID;
+                });
+            },
 
-                console.log(res.success)
-                // The payment is complete!
-                // You can now show a confirmation message to the customer
-            });
-        }
+            onAuthorize: function(data) {
+                return paypal.request.post(EXECUTE_PAYMENT_URL, {
+                    paymentID: data.paymentID,
+                    payerID:   data.payerID
+                }).then(function(res) {
 
-    }, '#paypal-button');
-</script>
-</body>
+                    console.log(res.success)
+                    // The payment is complete!
+                    // You can now show a confirmation message to the customer
+                });
+            }
+
+        }, '#paypal-button');
+    </script>
+    </body>
 </html>

@@ -9,18 +9,25 @@
     <body>
         <h1>These are your contacts:</h1>
 
-        <div class="payments">
-            {% for payment in payments %}
-                <div class="payment" style="width: 20%;">
-                    <h3>{{ payment.plan }}</h3>
-                    <p>Cost: {{ payment.bill }}.00 USD $</p>
-                    <p>Bought on: {{ payment.payDate }}</p>
-                    <p>Status: {{ payment.status }}</p>
-                </div>
-            {% endfor %}
-        </div>
+        <table>
+            <tr>
+                <td>Plan</td>
+                <td>Cost</td>
+                <td>Purchase Date</td>
+                <td>Status</td>
+            </tr>
 
-        <a href="{{ url_for('home') }}" class="button3">Go back home</a>
+            {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.plan }}</td>
+                    <td>{{ payment.bill }}.00 USD</td>
+                    <td>{{ payment.payDate }}</td>
+                    <td>{{ payment.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <a href="{{ url_for('home') }}" class="button5">Go back home</a>
         <a href="{{ url_for('payment_form') }}" class="button1">Create new payment</a>
     </body>
 </html>
