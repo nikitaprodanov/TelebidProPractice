@@ -2,46 +2,31 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <link rel="stylesheet" href="../static/payment.css">
-        <title>Buy 1000 points</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/sent_sms.css">
+        <title>Buy Points</title>
     </head>
     <body>
-        <div id="paypal-button"></div>
+        <h1>Choose the plan you want to buy</h1>
 
-        <a href="{{ url_for('home') }}" class="home-button">Go back home</a>
+        <table>
+            <tr>
+                <td>Plan</td>
+                <td>You get</td>
+                <td>Price</td>
+                <td>Buy</td>
+            </tr>
 
-    <script src="https://www.paypalobjects.com/api/checkout.js"></script>
+            {% for plan in plans %}
+                <tr>
+                    <td>{{ plan.name }}</td>
+                    <td>{{ plan.points }}</td>
+                    <td>{{ plan.cost }} USD$</td>
+                    <td><a href="{{ url_for('plan_checkout', id=plan.id) }}" class="button2">Buy now</a></td>
+                </tr>
+            {% endfor %}
+        </table>
 
-    <script>
-        // TODO: Change routes to heroku routes
-        var CREATE_PAYMENT_URL  = 'http://127.0.0.1:5000/payment';
-        var EXECUTE_PAYMENT_URL = 'http://127.0.0.1:5000/execute';
-
-        paypal.Button.render({
-
-            env: 'sandbox', // Or 'sandbox'
-
-            commit: true, // Show a 'Pay Now' button
-
-            payment: function() {
-                return paypal.request.post(CREATE_PAYMENT_URL).then(function(data) {
-                    return data.paymentID;
-                });
-            },
-
-            onAuthorize: function(data) {
-                return paypal.request.post(EXECUTE_PAYMENT_URL, {
-                    paymentID: data.paymentID,
-                    payerID:   data.payerID
-                }).then(function(res) {
-
-                    console.log(res.success)
-                    // The payment is complete!
-                    // You can now show a confirmation message to the customer
-                });
-            }
-
-        }, '#paypal-button');
-    </script>
+        <a href="{{ url_for('home') }}" class="button1">Go back home</a>
     </body>
 </html>

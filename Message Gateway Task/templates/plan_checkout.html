@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="../static/payment.css">
+        <title>Buy {{ plan.name }}</title>
+    </head>
+    <body>
+        <div id="paypal-button"></div>
+
+        <p>By clicking on the checkout button you will procced to checkout and buy our <b>{{ plan.name }} plan</b> that will add <b>{{ plan.points}} points</b> to your account ballance</p>
+
+        <a href="{{ url_for('home') }}" class="home-button">Go back home</a>
+
+    <script src="https://www.paypalobjects.com/api/checkout.js"></script>
+
+    <script>
+        // TODO: Change routes to heroku routes
+        var CREATE_PAYMENT_URL  = 'https://message-gateway-niki.herokuapp.com/payment/{{ plan.id }}';
+        var EXECUTE_PAYMENT_URL = 'https://message-gateway-niki.herokuapp.com/execute';
+
+        paypal.Button.render({
+
+            env: 'sandbox', // Or 'sandbox'
+
+            commit: true, // Show a 'Pay Now' button
+
+            payment: function() {
+                return paypal.request.post(CREATE_PAYMENT_URL).then(function(data) {
+                    return data.paymentID;
+                });
+            },
+
+            onAuthorize: function(data) {
+                return paypal.request.post(EXECUTE_PAYMENT_URL, {
+                    paymentID: data.paymentID,
+                    payerID:   data.payerID
+                }).then(function(res) {
+
+                    console.log(res.success)
+                    // The payment is complete!
+                    // You can now show a confirmation message to the customer
+                });
+            }
+
+        }, '#paypal-button');
+    </script>
+    </body>
+</html>

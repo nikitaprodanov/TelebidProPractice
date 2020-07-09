@@ -23,7 +23,7 @@
                     <td>{{ contact.contactName }}</td>
                     <td>{{ contact.reciever }}</td>
                     <td>{{ contact.method }}</td>
-                    <td><a href="{{ url_for('send_sms_from_contacts', reciever=contact.reciever, method=contact.method) }}" class="button2">Send again</a></td>
+                    <td><a href="{{ url_for('send_message_from_contacts', reciever=contact.reciever, method=contact.method) }}" class="button2">Send again</a></td>
                     <td><a href="{{ url_for('update_contact', id=contact.id) }}" class="button5">Update contact info</a></td>
                 </tr>
             {% endfor %}

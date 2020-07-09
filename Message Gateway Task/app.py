@@ -127,10 +127,12 @@ class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     points = db.Column(db.Integer())
     cost = db.Column(db.Float())
+    name = db.Column(db.Text())
 
-    def __init__(self, points, cost):
+    def __init__(self, points, cost, name):
         self.points = points
         self.cost = cost
+        self.name = name
         
 
 @app.route('/')
@@ -164,7 +166,7 @@ def register():
 
             token = s.dumps(email, salt='email-confirm')
 
-            msg = Message('Confirmation Email', sender='nikitaprodanov@gmail.com', recipients=[email])
+            msg = Message('Confirmation Email', sender='nikitaprodanov20@gmail.com', recipients=[email])
             link = url_for('confirm_email', token=token, _external=True)
             msg.html = render_template('email.html', link=link)
             mail.send(msg)
@@ -179,7 +181,7 @@ def verification_send():
         email = request.form['email']
         token = s.dumps(email, salt='email-confirm')
 
-        msg = Message('Confirmation Email', sender='nikitaprodanov@gmail.com', recipients=[email])
+        msg = Message('Confirmation Email', sender='nikitaprodanov20@gmail.com', recipients=[email])
         link = url_for('confirm_email', token=token, _external=True)
         msg.html = render_template('email.html', link=link)
         mail.send(msg)
@@ -284,7 +286,8 @@ def send_sms():
 
         user = User.query.filter_by(id=session.get('user_id')).first()
         if user.points < distributor.cost:
-            return redirect(url_for('payment_form'))
+            plans = Plan.query.all()
+            return redirect(url_for('payment_form', plans=plans))
 
         account_sid = "AC68d1456824929a8b36012db1c7df9cd6"
         auth_token = "87b90a5e8fc92f0a09ee154a1d867dbc"
@@ -306,12 +309,9 @@ def send_sms():
             db.session.add(data)
             db.session.commit()
 
-            callback_uri = url_for('change_status', id=data.id, _external=True)
-
             sms = client.messages.create(
                 from_="+12018317102",
                 body=msg,
-                status_callback=str(callback_uri),
                 to=request.form['phone-number']
             )
 
@@ -326,13 +326,58 @@ def send_sms():
             message.status = 'failed'
             return redirect(url_for('sms_error'))
 
-@app.route('/messages/status/<int:id>', methods=['POST'])
-def change_status(id):
-    message = Message.query.filter_by(id=id).first()
-    status = request.json.get("MessageStatus")
-    message.status = status
-    db.session.commit()
-    return 'ok'
+@app.route('/send_whatsapp', methods=['GET', 'POST'])
+@require_login
+@require_verification
+def send_whatsapp():
+    if request.method == 'GET':
+        return render_template('send_whatsapp.html')
+    if request.method == 'POST':
+        distributor = Distributor.query.filter_by(name="whatsapp").first()
+
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        if user.points < distributor.cost:
+            plans = Plan.query.all()
+            return redirect(url_for('payment_form', plans=plans))
+
+        account_sid = "AC8a531065b0642484a1b223f19c2b5cdd"
+        auth_token = "ff6762b516c1b885449d9d0530ed257d"
+
+        client = Client(account_sid, auth_token)
+
+        from_whatsapp_number = 'whatsapp:+14155238886'
+        to_whatsapp_number = 'whatsapp:{}'.format(request.form['phone-number'])
+        if to_whatsapp_number != 'whatsapp:+359893294474':
+            return redirect(whatsapp_error)
+
+        try:
+            reciever = to_whatsapp_number
+            msg = "This is automated message from {}: {}".format(request.form['from'], request.form['message'])
+            tax = distributor.cost
+            sender = User.query.filter_by(id=session.get('user_id')).first()
+
+            contact = Contact.query.filter_by(owner=sender, reciever=to_whatsapp_number, method='whatsapp').first()
+
+            if contact:
+                reciever = contact.contactName
+            
+            data = SMS(reciever=reciever, message=msg, tax=tax, status='delivered', sender=sender)
+            session['message_id'] = data.id
+            db.session.add(data)
+            db.session.commit()
+
+            client.messages.create(body=msg,
+                        from_=from_whatsapp_number,
+                        to=to_whatsapp_number)
+
+            sender.points -= tax
+            db.session.commit()
+            
+            return redirect(url_for('success_whatsapp'))
+        except:
+            message = SMS.query.filter_by(id=session.get('message_id')).first()
+            message.status = 'failed'
+            return redirect(url_for('whatsapp_error'))
 
 @app.route('/send_sms/error')
 @require_login
@@ -340,11 +385,23 @@ def change_status(id):
 def sms_error():
     return render_template('sms_error.html')
 
+@app.route('/send_whatsapp/error')
+@require_login
+@require_verification
+def whatsapp_error():
+    return render_template('whatsapp_error.html')
+
 @app.route('/send_sms/sucsess')
 @require_login
 @require_verification
 def success_sms():
     return render_template('success_sms.html')
+
+@app.route('/send_whatsapp/sucsess')
+@require_login
+@require_verification
+def success_whatsapp():
+    return render_template('success_whatsapp.html')
     
 @app.route('/user/sent_sms')
 @require_login
@@ -373,8 +430,11 @@ def user_payments():
 @app.route('/send_sms_from_contacts/<reciever>/<method>')
 @require_login
 @require_verification
-def send_sms_from_contacts(reciever, method):
-    return render_template('send_from_contact.html', reciever=reciever)
+def send_message_from_contacts(reciever, method):
+    if method == 'whatsapp':
+        return render_template('send_from_contact_whatsapp.html', reciever=reciever)
+    if method == 'sms':
+        return render_template('send_from_contact_sms.html', reciever=reciever)
 
 @app.route('/new_contact', methods=['GET', 'POST'])
 @require_login
@@ -385,7 +445,7 @@ def new_contact():
     if request.method == 'POST':
         reciever = request.form['phone-number']
         contactName = request.form['name']
-        method = 'sms'
+        method = request.form['options']
         user = User.query.filter_by(id=session.get('user_id')).first()
         data = Contact(reciever=reciever, contactName=contactName, method=method, owner=user)
         db.session.add(data)
@@ -442,11 +502,19 @@ def change_credentials():
 @require_login
 @require_verification
 def payment_form():
-    return render_template('payment_form.html')
+    plans = Plan.query.all()
+    return render_template('payment_form.html', plans=plans)
 
-@app.route('/payment', methods=['POST'])
-def payment():
-    plan = Plan.query.filter_by(id=1).first()
+@app.route('/plan_checkout/<id>')
+@require_login
+@require_verification
+def plan_checkout(id):
+    plan = Plan.query.filter_by(id=id).first()
+    return render_template('plan_checkout.html', plan=plan)
+
+@app.route('/payment/<id>', methods=['POST'])
+def payment(id):
+    plan = Plan.query.filter_by(id=id).first()
     payment = paypalrestsdk.Payment({
         "intent": "sale",
         "payer": {
@@ -457,7 +525,7 @@ def payment():
         "transactions": [{
             "item_list": {
                 "items": [{
-                    "name": "testitem",
+                    "name": str(plan.name),
                     "sku": "12345",
                     "price": str(plan.cost),
                     "currency": "USD",
@@ -469,12 +537,12 @@ def payment():
 
     if payment.create():
         user = User.query.filter_by(id=session.get('user_id')).first()
-        data = Payment(bill=10, status='created', plan='100 points', payer=user)
+        data = Payment(bill=plan.cost, status='queued', plan=plan.name, payer=user)
         db.session.add(data)
         db.session.commit()
         session['payment_id'] = data.id
     else:
-        data = Payment(bill=10, status='failed', plan='100 points', payer=user)
+        data = Payment(bill=10, status='failed', plan=plan.name, payer=user)
         db.session.add(data)
         db.session.commit()
         print(payment.error)
@@ -486,17 +554,19 @@ def payment():
 def execute():
     success = False
     payment = paypalrestsdk.Payment.find(request.form['paymentID'])
+    myPayment = Payment.query.filter_by(id=session.get('payment_id')).first()
+    myPayment.status = 'failed'
+    db.session.commit()
 
     if payment.execute({'payer_id' : request.form['payerID']}):
-        myPayment = Payment.query.filter_by(id=session.get('payment_id')).first()
         print('Success execute')
         succes = True
         user = User.query.filter_by(id=session.get('user_id')).first()
-        user.points += 100
+        plan = Plan.query.filter_by(name=myPayment.plan).first()
+        user.points += plan.points
         myPayment.status = 'success'
         db.session.commit()
     else:
-        myPayment = Payment.query.filter_by(id=session.get('payment_id')).first()
         myPayment.status = 'failed'
         db.session.commit()
         print(payment.error)

@@ -4,21 +4,20 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="../static/register.css">
-        <title>New Contact</title>
+        <title>Send WhatsApp Message</title>
     </head>
     <body>
-        <form action="/new_contact" method="post" id="form_id">
-            <header class="form-header"><h1>Send SMS</h1></header>
+        <form action="/send_whatsapp" method="post" id="form_id">
+            <header class="form-header">Send WhatsApp Message</header>
 
-            <label>Contact name</label>
-            <input class="name" type="text" name="name" placeholder="How will be this contact displayed" required><br>
+            <label>From</label>
+            <input class="from" type="text" name="from" placeholder="How will you be presented to the reciever" required><br>
 
-            <label>Contact phone in given format</label>
+            <label>Reciever's Phone number in given format</label>
             <input class="phone-number" type="text" name="phone-number" placeholder="+35989***" required><br>
 
-            <label>Send messages to the contact via:</label>
-            <input type="radio" name="options" value="sms">SMS<br>
-            <input type="radio" name="options" value="whatsapp">WhatsApp<br>
+            <label>Message</label>
+            <input class="message" type="text" name="message"><br>
 
             <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
