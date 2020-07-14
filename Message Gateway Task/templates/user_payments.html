@@ -7,7 +7,17 @@
         <title>My payments</title>
     </head>
     <body>
-        <h1>These are your contacts:</h1>
+        <h1>These are your payments:</h1>
+
+        <form action="/user/payments" method='POST'>
+            <label>From date</label>
+            <input name="from" type="date" required/>
+
+            <label>To date</label>
+            <input name="to" type="date" required/>
+
+            <input type="submit" value="Search">
+        </form>
 
         <table>
             <tr>
@@ -27,7 +37,7 @@
             {% endfor %}
         </table>
 
-        <a href="{{ url_for('home') }}" class="button5">Go back home</a>
-        <a href="{{ url_for('payment_form') }}" class="button1">Create new payment</a>
+        <a href="{{ url_for('home') }}" class="button1">Go back home</a>
+        <a href="{{ url_for('payment_form') }}" class="button2">Create new payment</a>
     </body>
 </html>

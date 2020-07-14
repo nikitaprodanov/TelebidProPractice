@@ -16,9 +16,11 @@
             <label>Password</label>
             <input class="password" type="password" name="password" placeholder="Enter your password" required><br>
 
-            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+            <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('login') }}" class="button2" style="width: 100%;">Try to log in again</a>
 
         <script>
             function save() {

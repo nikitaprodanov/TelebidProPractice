@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Authenticate</title>
+    </head>
+    <body>
+        <form action="/backoffice/authenticate" method="post" id="form_id">
+            <header class="form-header"><h1>Authenticate admin</h1></header>
+
+            <label>Admin username</label>
+            <input class="username" type="text" name="username" required><br>
+
+            <label>Password</label>
+            <input class="password" type="password" name="password" required><br>
+
+            <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+
+        </form>
+
+        <script>
+            function save() {
+                document.getElementById("form_id").submit();
+            }
+        </script>
+    </body>
+</html>

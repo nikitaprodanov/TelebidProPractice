@@ -7,7 +7,17 @@
         <title>Previous SMS</title>
     </head>
     <body>
-        <h1>You are logged in as {{ user.username }}</h1>
+        <h1>These are your messages:</h1>
+
+        <form action="/user/sent_sms" method='POST'>
+            <label>From date</label>
+            <input name="from" type="date" required/>
+
+            <label>To date</label>
+            <input name="to" type="date" required/>
+
+            <input type="submit" value="Search">
+        </form>
 
         <table>
             <tr>

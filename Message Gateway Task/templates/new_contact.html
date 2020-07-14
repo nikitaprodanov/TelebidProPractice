@@ -8,7 +8,7 @@
     </head>
     <body>
         <form action="/new_contact" method="post" id="form_id">
-            <header class="form-header"><h1>Send SMS</h1></header>
+            <header class="form-header"><h1>Create Contact</h1></header>
 
             <label>Contact name</label>
             <input class="name" type="text" name="name" placeholder="How will be this contact displayed" required><br>
@@ -16,13 +16,16 @@
             <label>Contact phone in given format</label>
             <input class="phone-number" type="text" name="phone-number" placeholder="+35989***" required><br>
 
-            <label>Send messages to the contact via:</label>
-            <input type="radio" name="options" value="sms">SMS<br>
+            <label>Send messages to the contact via:</label><br>
+            <input type="radio" name="options" value="sms" checked=true >SMS<br>
             <input type="radio" name="options" value="whatsapp">WhatsApp<br>
 
-            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+            <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('new_contact') }}" class="button2" style="width: 96.5%;">Try again</a>
+        <a href="{{ url_for('user_contacts') }}" class="button3" style="width: 96.5%;">Cancel</a>
 
         <script>
             function save() {

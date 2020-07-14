@@ -28,11 +28,11 @@
             <label>Do you have WhatsApp</label>
             <input class="has-whatsapp" type="checkbox" name="has-whatsapp"><br>
 
-            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+            <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
 
-        <a href="{{ url_for('register') }}" class="button2">Try again</a>
+        <a href="{{ url_for('register') }}" class="button2" style="width: 96.5%;">Try again</a>
 
         <script>
             function save() {

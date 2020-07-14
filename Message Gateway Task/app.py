@@ -12,6 +12,8 @@ import json
 import random
 import string
 
+# TODO: SALT AND CUSTOM HASHING
+
 # Initialize app
 app = Flask(__name__)
 
@@ -289,26 +291,26 @@ def send_sms():
             plans = Plan.query.all()
             return redirect(url_for('payment_form', plans=plans))
 
-        account_sid = "AC68d1456824929a8b36012db1c7df9cd6"
-        auth_token = "87b90a5e8fc92f0a09ee154a1d867dbc"
+        account_sid = app.config['SMS_SID']
+        auth_token = app.config['SMS_TOKEN']
         client = Client(account_sid, auth_token)
 
+        reciever = request.form['phone-number']
+        msg = "This is automated sms from {}: {}".format(request.form['from'], request.form['message'])
+        tax = distributor.cost
+        sender = User.query.filter_by(id=session.get('user_id')).first()
+
+        contact = Contact.query.filter_by(owner=sender, reciever=reciever, method='sms').first()
+
+        if contact:
+            reciever = contact.contactName
+        
+        data = SMS(reciever=reciever, message=msg, tax=tax, status='queued', sender=sender)
+        db.session.add(data)
+        db.session.commit()
+        session['message_id'] = data.id
+
         try:
-            reciever = request.form['phone-number']
-            msg = "This is automated sms from {}: {}".format(request.form['from'], request.form['message'])
-            tax = distributor.cost
-            sender = User.query.filter_by(id=session.get('user_id')).first()
-
-            contact = Contact.query.filter_by(owner=sender, reciever=reciever, method='sms').first()
-
-            if contact:
-                reciever = contact.contactName
-            
-            data = SMS(reciever=reciever, message=msg, tax=tax, status='queued', sender=sender)
-            session['message_id'] = data.id
-            db.session.add(data)
-            db.session.commit()
-
             sms = client.messages.create(
                 from_="+12018317102",
                 body=msg,
@@ -316,14 +318,14 @@ def send_sms():
             )
 
             sender.points -= tax
-            db.session.commit()
-
             data.status = 'delivered'
+            db.session.commit()
 
             return redirect(url_for('success_sms'))
         except:
             message = SMS.query.filter_by(id=session.get('message_id')).first()
             message.status = 'failed'
+            db.session.commit()
             return redirect(url_for('sms_error'))
 
 @app.route('/send_whatsapp', methods=['GET', 'POST'])
@@ -340,32 +342,32 @@ def send_whatsapp():
             plans = Plan.query.all()
             return redirect(url_for('payment_form', plans=plans))
 
-        account_sid = "AC8a531065b0642484a1b223f19c2b5cdd"
-        auth_token = "ff6762b516c1b885449d9d0530ed257d"
+        account_sid = app.config['WHATSAPP_SID']
+        auth_token = app.config['WHATSAPP_TOKEN']
 
         client = Client(account_sid, auth_token)
 
         from_whatsapp_number = 'whatsapp:+14155238886'
         to_whatsapp_number = 'whatsapp:{}'.format(request.form['phone-number'])
         if to_whatsapp_number != 'whatsapp:+359893294474':
-            return redirect(whatsapp_error)
+            return redirect(url_for('whatsapp_error'))
+
+        reciever = to_whatsapp_number
+        msg = "This is automated message from {}: {}".format(request.form['from'], request.form['message'])
+        tax = distributor.cost
+        sender = User.query.filter_by(id=session.get('user_id')).first()
+
+        contact = Contact.query.filter_by(owner=sender, reciever=to_whatsapp_number, method='whatsapp').first()
+
+        if contact:
+            reciever = contact.contactName
+        
+        data = SMS(reciever=reciever, message=msg, tax=tax, status='delivered', sender=sender)
+        db.session.add(data)
+        db.session.commit()
+        session['message_id'] = data.id
 
         try:
-            reciever = to_whatsapp_number
-            msg = "This is automated message from {}: {}".format(request.form['from'], request.form['message'])
-            tax = distributor.cost
-            sender = User.query.filter_by(id=session.get('user_id')).first()
-
-            contact = Contact.query.filter_by(owner=sender, reciever=to_whatsapp_number, method='whatsapp').first()
-
-            if contact:
-                reciever = contact.contactName
-            
-            data = SMS(reciever=reciever, message=msg, tax=tax, status='delivered', sender=sender)
-            session['message_id'] = data.id
-            db.session.add(data)
-            db.session.commit()
-
             client.messages.create(body=msg,
                         from_=from_whatsapp_number,
                         to=to_whatsapp_number)
@@ -403,13 +405,20 @@ def success_sms():
 def success_whatsapp():
     return render_template('success_whatsapp.html')
     
-@app.route('/user/sent_sms')
+@app.route('/user/sent_sms', methods=['GET', 'POST'])
 @require_login
 @require_verification
 def sent_sms():
-    user = User.query.filter_by(id=session.get('user_id')).first()
-    messages = user.messages
-    return render_template('sent_sms_list.html', messages=messages, user=user)
+    if request.method == 'GET':
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        messages = SMS.query.filter_by(senderId=user.id).order_by(SMS.sendDate.desc()).limit(10).all()
+        return render_template('sent_sms_list.html', messages=messages, user=user)
+    if request.method == 'POST':
+        fromDate = str(request.form['from'])
+        toDate = str(str(request.form['to']) + " 23:59:59")
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        messages = SMS.query.filter(SMS.sendDate >= fromDate, SMS.sendDate <= toDate, SMS.senderId==user.id).order_by(SMS.sendDate.desc()).all()
+        return render_template('sent_sms_list.html', messages=messages, user=user)
 
 @app.route('/user/contacts')
 @require_login
@@ -419,13 +428,20 @@ def user_contacts():
     contacts = user.contacts
     return render_template('user_contacts.html', contacts=contacts)
 
-@app.route('/user/payments')
+@app.route('/user/payments', methods=['GET', 'POST'])
 @require_login
 @require_verification
 def user_payments():
-    user = User.query.filter_by(id=session.get('user_id')).first()
-    payments = user.payments
-    return render_template('user_payments.html', payments=payments)
+    if request.method == 'GET':
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        payments = Payment.query.filter_by(payerId=user.id).order_by(Payment.payDate.desc()).limit(10).all()
+        return render_template('user_payments.html', payments=payments)
+    if request.method == 'POST':
+        fromDate = str(request.form['from'])
+        toDate = str(str(request.form['to']) + " 23:59:59")
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        payments = Payment.query.filter(Payment.payDate >= fromDate, Payment.payDate <= toDate, Payment.payerId==user.id).order_by(Payment.payDate.desc()).all()
+        return render_template('user_payments.html', payments=payments)
 
 @app.route('/send_sms_from_contacts/<reciever>/<method>')
 @require_login
@@ -462,8 +478,10 @@ def update_contact(id):
     if request.method == 'POST':
         contactName = request.form['name']
         reciever = request.form['phone-number']
+        method = request.form['options']
         contact.contactName = contactName
         contact.reciever = reciever
+        contact.method = method
         db.session.commit()
         return redirect('/user/contacts')
 
@@ -537,7 +555,7 @@ def payment(id):
 
     if payment.create():
         user = User.query.filter_by(id=session.get('user_id')).first()
-        data = Payment(bill=plan.cost, status='queued', plan=plan.name, payer=user)
+        data = Payment(bill=plan.cost, status='cancelled', plan=plan.name, payer=user)
         db.session.add(data)
         db.session.commit()
         session['payment_id'] = data.id
@@ -577,6 +595,44 @@ def execute():
 @app.route('/payment/error/<error>')
 def payment_error(error):
     return render_template('payment_error', error=error)
+
+# BACK OFFICE
+
+def require_admin(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get('admin'):
+            return redirect('/verification/send_again')
+        return func(*args, **kwargs)
+    return wrapper
+
+@app.route('/backoffice')
+def backoffice():
+    if session.get('admin'):
+        return redirect(url_for('admin_home'))
+    return redirect(url_for('admin_authenticate'))
+
+@app.route('/backoffice/authenticate', methods=['GET', 'POST'])
+def admin_authenticate():
+    if request.method == 'GET':
+        return render_template('backoffice_authenticate.html')
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        if username != app.config['ADMINS_USERNAME'] or password != app.config['ADMIN_PASSWORD']:
+            return redirect(url_for('admin_authenticate'))
+        
+        session['admin']=True
+        return redirect(url_for('admin_home'))
+
+@app.route('/backoffice/home')
+@require_admin
+def admin_home():
+    today = str(str(datetime.utcnow().date()) + " 00:00:00")
+    messages = SMS.query.filter(SMS.sendDate >= today).count()
+    payments = Payment.query.filter(Payment.payDate >= today).count()
+    return render_template('admin_home.html', payments=payments, messages=messages)
 
 if __name__ == '__main__':
     app.run(debug=debug)

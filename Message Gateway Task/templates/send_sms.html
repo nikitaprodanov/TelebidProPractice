@@ -19,9 +19,12 @@
             <label>Message</label>
             <input class="message" type="text" name="message"><br>
 
-            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+            <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('send_sms') }}" class="button2" style="width: 96.5%;">Try again</a>
+        <a href="{{ url_for('home') }}" class="button3" style="width: 96.5%;">Cancel</a>
 
         <script>
             function save() {

@@ -17,11 +17,14 @@
             <input class="phone-number" type="text" name="phone-number" placeholder="+35989***" value="{{ reciever }}" required><br>
 
             <label>Message</label>
-            <input class="message" type="text" name="message"><br>
+            <input class="message" type="text" name="message" required><br>
 
-            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+            <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('send_message_from_contacts', reciever=reciever, method='whatsapp') }}" class="button2" style="width: 96.5%;">Try again</a>
+        <a href="{{ url_for('user_contacts') }}" class="button3" style="width: 96.5%;">Cancel</a>
 
         <script>
             function save() {

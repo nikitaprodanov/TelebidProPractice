@@ -10,14 +10,14 @@
 
         <p>By clicking on the checkout button you will procced to checkout and buy our <b>{{ plan.name }} plan</b> that will add <b>{{ plan.points}} points</b> to your account ballance</p>
 
-        <a href="{{ url_for('home') }}" class="home-button">Go back home</a>
+        <a href="{{ url_for('payment_form') }}" class="button3">Cancel</a>
 
     <script src="https://www.paypalobjects.com/api/checkout.js"></script>
 
     <script>
         // TODO: Change routes to heroku routes
-        var CREATE_PAYMENT_URL  = 'https://message-gateway-niki.herokuapp.com/payment/{{ plan.id }}';
-        var EXECUTE_PAYMENT_URL = 'https://message-gateway-niki.herokuapp.com/execute';
+        var CREATE_PAYMENT_URL  = 'http://127.0.0.1:5000/payment/{{ plan.id }}';
+        var EXECUTE_PAYMENT_URL = 'http://127.0.0.1:5000/execute';
 
         paypal.Button.render({
 

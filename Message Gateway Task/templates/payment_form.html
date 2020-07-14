@@ -20,7 +20,7 @@
             {% for plan in plans %}
                 <tr>
                     <td>{{ plan.name }}</td>
-                    <td>{{ plan.points }}</td>
+                    <td>{{ plan.points }} points</td>
                     <td>{{ plan.cost }} USD$</td>
                     <td><a href="{{ url_for('plan_checkout', id=plan.id) }}" class="button2">Buy now</a></td>
                 </tr>

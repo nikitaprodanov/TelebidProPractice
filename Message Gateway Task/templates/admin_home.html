@@ -4,11 +4,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="../static/home.css">
-        <title>SMS Success</title>
+        <title>Statistics</title>
     </head>
     <body>
-        <h1>Success</h1>
-        <p>You successfuly send a sms your SMS</p>
-        <a href="{{ url_for('home') }}" class="button1">Go back to home</a>
+        <h1>Theese are the main statistics for today</h1>
+        <p>Count of new payments: {{ payments }}</p>
+        <p>Count of new messages: {{ messages }}</p>
     </body>
 </html>

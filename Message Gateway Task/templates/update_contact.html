@@ -16,9 +16,24 @@
             <label>Contact phone</label>
             <input class="phone-number" type="text" name="phone-number" placeholder="+35989***" value="{{ contact.reciever }}" required><br>
 
-            <input type="submit" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
+            {% if contact.method == "sms" %}
+                <label>Send messages to the contact via:</label><br>
+                <input type="radio" name="options" value="sms" checked=true >SMS<br>
+                <input type="radio" name="options" value="whatsapp">WhatsApp<br>
+            {% endif %}
+
+            {% if contact.method == 'whatsapp' %}
+                <label>Send messages to the contact via:</label><br>
+                <input type="radio" name="options" value="sms">SMS<br>
+                <input type="radio" name="options" value="whatsapp" checked=true>WhatsApp<br>
+            {% endif %}
+
+            <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('update_contact', id=contact.id) }}" class="button2" style="width: 96.5%;">Try again</a>
+        <a href="{{ url_for('user_contacts') }}" class="button3" style="width: 96.5%;">Cancel</a>
 
         <script>
             function save() {
