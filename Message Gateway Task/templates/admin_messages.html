@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/sent_sms.css">
+        <title>New messages</title>
+    </head>
+    <body>
+        <h1>These are your messages:</h1>
+
+        <form action="/backoffice/messages" method='POST'>
+            <label>From date</label>
+            <input name="from" type="date" required/>
+
+            <label>To date</label>
+            <input name="to" type="date" required/>
+
+            <input type="submit" value="Search">
+        </form>
+
+        <table>
+            <tr>
+                <td>Sender(id)</td>
+                <td>Reciever</td>
+                <td>Message(id)</td>
+                <td>Send Date</td>
+                <td>Status</td>
+            </tr>
+
+            {% for message in messages %}
+                <tr>
+                    <td>{{ message.sender.username }}({{ message.sender.id }})</td>
+                    <td>{{ message.reciever }}</td>
+                    <td>{{ message.message }}({{ message.id }})</td>
+                    <td>{{ message.sendDate }}</td>
+                    <td>{{ message.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <a href="{{ url_for('admin_home') }}" class="button1">Go back home</a>
+    </body>
+</html>

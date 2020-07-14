@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/sent_sms.css">
+        <title>Plans catalogue</title>
+    </head>
+    <body>
+        <h1>Existing plans</h1>
+        <table>
+            <tr>
+                <td>Name</td>
+                <td>Cost(points)</td>
+                <td>Edit taxes</td>
+            </tr>
+
+            {% for distributor in distributors %}
+                <tr>
+                    <td>{{ distributor.name }}</td>
+                    <td>{{ distributor.cost }} points</td>
+                    <td><a href="{{ url_for('edit_tax', id=distributor.id) }}" class="button2">Edit</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <a href="{{ url_for('admin_home') }}" class="button1">Go back home</a>
+
+    </body>
+</html>

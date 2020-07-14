@@ -12,8 +12,6 @@ import json
 import random
 import string
 
-# TODO: SALT AND CUSTOM HASHING
-
 # Initialize app
 app = Flask(__name__)
 
@@ -602,7 +600,7 @@ def require_admin(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not session.get('admin'):
-            return redirect('/verification/send_again')
+            return redirect(url_for(admin_authenticate))
         return func(*args, **kwargs)
     return wrapper
 
@@ -633,6 +631,127 @@ def admin_home():
     messages = SMS.query.filter(SMS.sendDate >= today).count()
     payments = Payment.query.filter(Payment.payDate >= today).count()
     return render_template('admin_home.html', payments=payments, messages=messages)
+
+@app.route('/backoffice/messages', methods=['GET', 'POST'])
+@require_admin
+def admin_messages():
+    if request.method == 'GET':
+        today = str(str(datetime.utcnow().date()) + " 00:00:00")
+        messages = SMS.query.filter(SMS.sendDate >= today).all()
+        return render_template('admin_messages.html', messages=messages)
+    if request.method == 'POST':
+        fromDate = str(request.form['from'])
+        toDate = str(str(request.form['to']) + " 23:59:59")
+        messages = SMS.query.filter(SMS.sendDate >= fromDate, SMS.sendDate <= toDate).order_by(SMS.sendDate.desc()).all()
+        return render_template('admin_messages.html', messages=messages)
+
+@app.route('/backoffice/payments', methods=['GET', 'POST'])
+@require_admin
+def admin_payments():
+    if request.method == 'GET':
+        today = str(str(datetime.utcnow().date()) + " 00:00:00")
+        payments = Payment.query.filter(Payment.payDate >= today).all()
+        return render_template('admin_payments.html', payments=payments)
+    if request.method == 'POST':
+        fromDate = str(request.form['from'])
+        toDate = str(str(request.form['to']) + " 23:59:59")
+        payments = Payment.query.filter(Payment.payDate >= fromDate, Payment.payDate <= toDate).order_by(Payment.payDate.desc()).all()
+        return render_template('admin_payments.html', payments=payments)
+
+@app.route('/backoffice/user_activity', methods=['GET', 'POST'])
+@require_admin
+def user_activity():
+    if request.method == 'GET':
+        return render_template('find_user.html')
+    if request.method == 'POST':
+        id = int(request.form['id'])
+        if id <= 0:
+            return redirect(url_for('searched_user_error'))
+        user = User.query.filter_by(id=id).first()
+        if not user:
+            return redirect(url_for('searched_user_error'))
+        messages = user.messages
+        payments = user.payments
+        return render_template('user_activity.html', user=user, messages=messages, payments=payments)
+
+@app.route('/backoffice/user_activity/error')
+def searched_user_error():
+    return render_template('searched_user_error.html')
+
+@app.route('/backoffice/plans_catalogue')
+@require_admin
+def plans_catalogue():
+    plans = Plan.query.all()
+    return render_template('plans_catalogue.html', plans=plans)
+
+@app.route('/backoffice/plan_edit/<int:id>', methods=['GET', 'POST'])
+@require_admin
+def edit_plan(id):
+    if request.method == 'GET':
+        plan = Plan.query.filter_by(id=id).first()
+        return render_template('edit_plan.html', plan=plan)
+    if request.method == 'POST':
+        plan = Plan.query.filter_by(id=id).first()
+        points = int(request.form['points'])
+        cost = float(request.form['cost'])
+        name = request.form['name']
+        if cost <= 0 or points <= 0:
+            return redirect(url_for('edit_plan_error', id=id))
+        plan.points = points
+        plan.cost = cost
+        plan.name = name
+        db.session.commit()
+        return redirect(url_for('plans_catalogue'))
+
+@app.route('/backoffice/plan_edit/error/<int:id>')
+def edit_plan_error(id):
+    return render_template('edit_plan_error.html', id=id)
+
+@app.route('/backoffice/new_plan', methods=['GET', 'POST'])
+@require_admin
+def new_plan():
+    if request.method == 'GET':
+        return render_template('new_plan.html')
+    if request.method == 'POST':
+        points = int(request.form['points'])
+        cost = float(request.form['cost'])
+        name = request.form['name']
+        if cost <= 0 or points <= 0:
+            return redirect(url_for('new_plan_error'))
+        data = Plan(points=points, cost=cost, name=name)
+        db.session.add(data)
+        db.session.commit()
+        return redirect(url_for('plans_catalogue'))
+
+@app.route('/backoffice/new_plan/error')
+def new_plan_error():
+    return render_template('new_plan_error.html')
+
+@app.route('/backoffice/message_taxes')
+@require_admin
+def message_taxes():
+    distributors = Distributor.query.all()
+    return render_template('message_taxes.html', distributors=distributors)
+
+@app.route('/backoffice/edit_tax/<int:id>', methods=['GET', 'POST'])
+@require_admin
+def edit_tax(id):
+    if request.method == 'GET':
+        distributor = Distributor.query.filter_by(id=id).first()
+        return render_template('edit_tax.html', distributor=distributor)
+    if request.method == 'POST':
+        distributor = Distributor.query.filter_by(id=id).first()
+        cost = float(request.form['cost'])
+        if cost <= 0:
+            return redirect(url_for('edit_tax_error', id=id))
+        distributor.cost = cost
+        db.session.commit()
+        return redirect(url_for('message_taxes'))
+        
+@app.route('/backoffice/edit_tax/error/<int:id>')
+def edit_tax_error(id):
+    return render_template('edit_tax_error.html', id=id)
+
 
 if __name__ == '__main__':
     app.run(debug=debug)

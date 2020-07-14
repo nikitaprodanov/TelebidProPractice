@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/sent_sms.css">
+        <title>Plans catalogue</title>
+    </head>
+    <body>
+        <h1>Existing plans</h1>
+        <table>
+            <tr>
+                <td>Plan</td>
+                <td>You get</td>
+                <td>Price</td>
+                <td>Change</td>
+            </tr>
+
+            {% for plan in plans %}
+                <tr>
+                    <td>{{ plan.name }}</td>
+                    <td>{{ plan.points }} points</td>
+                    <td>{{ plan.cost }} USD$</td>
+                    <td><a href="{{ url_for('edit_plan', id=plan.id) }}" class="button2">Edit</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <a href="{{ url_for('new_plan') }}" class="button2">Create new plan</a>
+
+        <a href="{{ url_for('admin_home') }}" class="button1">Go back home</a>
+        
+    </body>
+</html>

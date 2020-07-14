@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/sent_sms.css">
+        <link rel="stylesheet" href="../static/home.css">
+        <title>User activity</title>
+    </head>
+    <body>
+        <h1>User with id: {{ user.id }}</h1>
+        <p>Username: {{ user.username }}</p>
+        <p>Email: {{ user.email }}</p>
+        <p>Phone: {{ user.phone }}</p>
+        <p>Whatsapp: {{ user.hasWhatsapp }}</p>
+        <h1>Messages:</h1>
+        <table>
+            <tr>
+                <td>Sender(id)</td>
+                <td>Reciever</td>
+                <td>Message(id)</td>
+                <td>Send Date</td>
+                <td>Status</td>
+            </tr>
+
+            {% for message in messages %}
+                <tr>
+                    <td>{{ message.sender.username }}({{ message.sender.id }})</td>
+                    <td>{{ message.reciever }}</td>
+                    <td>{{ message.message }}({{ message.id }})</td>
+                    <td>{{ message.sendDate }}</td>
+                    <td>{{ message.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <h1>Payments:</h1>
+        <table>
+            <tr>
+                <td>Payer(id)</td>
+                <td>Plan(id)</td>
+                <td>Cost</td>
+                <td>Purchase Date</td>
+                <td>Status</td>
+            </tr>
+
+            {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payer.username }}({{ payment.payer.id }})</td>
+                    <td>{{ payment.plan }}</td>
+                    <td>{{ payment.bill }}.00 USD</td>
+                    <td>{{ payment.payDate }}</td>
+                    <td>{{ payment.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <a href="{{ url_for('admin_home') }}" class="button1">Go back home</a>
+
+    </body>
+</html>

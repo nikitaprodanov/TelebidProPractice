@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="../static/sent_sms.css">
+        <title>New messages</title>
+    </head>
+    <body>
+        <h1>These are your messages:</h1>
+
+        <form action="/backoffice/payments" method='POST'>
+            <label>From date</label>
+            <input name="from" type="date" required/>
+
+            <label>To date</label>
+            <input name="to" type="date" required/>
+
+            <input type="submit" value="Search">
+        </form>
+
+        <table>
+            <tr>
+                <td>Payer(id)</td>
+                <td>Plan(id)</td>
+                <td>Cost</td>
+                <td>Purchase Date</td>
+                <td>Status</td>
+            </tr>
+
+            {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payer.username }}({{ payment.payer.id }})</td>
+                    <td>{{ payment.plan }}</td>
+                    <td>{{ payment.bill }}.00 USD</td>
+                    <td>{{ payment.payDate }}</td>
+                    <td>{{ payment.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <a href="{{ url_for('admin_home') }}" class="button1">Go back home</a>
+    </body>
+</html>

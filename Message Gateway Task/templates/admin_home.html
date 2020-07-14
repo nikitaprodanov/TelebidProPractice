@@ -10,5 +10,10 @@
         <h1>Theese are the main statistics for today</h1>
         <p>Count of new payments: {{ payments }}</p>
         <p>Count of new messages: {{ messages }}</p>
+        <a href="{{ url_for('admin_messages') }}" class="button1">See message statistics</a>
+        <a href="{{ url_for('admin_payments') }}" class="button1">See payments statistics</a>
+        <a href="{{ url_for('user_activity') }}" class="button1">See user activity</a>
+        <a href="{{ url_for('plans_catalogue') }}" class="button1">Plans catalogue</a>
+        <a href="{{ url_for('message_taxes') }}" class="button1">Message taxes</a>
     </body>
 </html>

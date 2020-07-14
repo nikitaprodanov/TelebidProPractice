@@ -4,21 +4,20 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="../static/register.css">
-        <title>Authenticate</title>
+        <title>Find user</title>
     </head>
     <body>
-        <form action="/backoffice/authenticate" method="post" id="form_id">
-            <header class="form-header"><h1>Authenticate admin</h1></header>
+        <form action="/backoffice/user_activity" method="post" id="form_id">
+            <header class="form-header"><h1>Search for a user</h1></header>
 
-            <label>Admin username</label>
-            <input class="username" type="text" name="username" required><br>
-
-            <label>Password</label>
-            <input class="password" type="password" name="password" required><br>
+            <label>Find user by ID</label>
+            <input class="id" type="number" name="id" required><br>
 
             <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('admin_home') }}" class="button3">Cancel</a>
 
         <script>
             function save() {

@@ -16,8 +16,8 @@
 
     <script>
         // TODO: Change routes to heroku routes
-        var CREATE_PAYMENT_URL  = 'http://127.0.0.1:5000/payment/{{ plan.id }}';
-        var EXECUTE_PAYMENT_URL = 'http://127.0.0.1:5000/execute';
+        var CREATE_PAYMENT_URL  = 'https://message-gateway-niki.herokuapp.com/payment/{{ plan.id }}';
+        var EXECUTE_PAYMENT_URL = 'https://message-gateway-niki.herokuapp.com/execute';
 
         paypal.Button.render({
 

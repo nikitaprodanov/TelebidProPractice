@@ -4,21 +4,26 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="../static/register.css">
-        <title>Authenticate</title>
+        <title>New Plan</title>
     </head>
     <body>
-        <form action="/backoffice/authenticate" method="post" id="form_id">
-            <header class="form-header"><h1>Authenticate admin</h1></header>
+        <form action="/backoffice/new_plan" method="post" id="form_id">
+            <header class="form-header">New Plan</header>
 
-            <label>Admin username</label>
-            <input class="username" type="text" name="username" required><br>
+            <label>Points</label>
+            <input class="points" type="number" name="points" required><br>
 
-            <label>Password</label>
-            <input class="password" type="password" name="password" required><br>
+            <label>Cost(USD)</label>
+            <input class="cost" type="number" name="cost" required><br>
+
+            <label>Plan Name</label>
+            <input class="name" type="text" name="name" required><br>
 
             <input type="submit" class="button2" style="width: 100%;" onclick='save(); this.disabled = true; this.setAttribute("style", "color: #ccc");' value="Submit">
 
         </form>
+
+        <a href="{{ url_for('new_plan') }}" class="button2" style="width: 96.5%;">Try again</a>
 
         <script>
             function save() {
